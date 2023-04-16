@@ -9,3 +9,5 @@
 
 ## 目標
 - 接上Firebase，建立登入系統
+- 使用[sqflite](https://pub.dev/packages/sqflite)存放本地資料
+- 使用[vibration](https://pub.dev/packages/vibration)、[flutter_haptic](https://pub.dev/packages/flutter_haptic)、[HapticFeedback](https://api.flutter.dev/flutter/services/HapticFeedback-class.html)在敲擊時震動
