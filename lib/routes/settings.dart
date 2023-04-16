@@ -301,9 +301,9 @@ class _SettingsRouteState extends State<SettingsRoute> {
                     value: sliderController.currentValue,
                     max: 300,
                     min: 1,
-                    thumbColor: Colors.black,
+                    thumbColor: Theme.of(context).primaryColor,
                     inactiveColor: Colors.grey,
-                    activeColor: Colors.black,
+                    activeColor: Theme.of(context).primaryColor,
                     label: sliderController.currentValue.round().toString(),
                     onChanged: (double value) {
                       setState(() {

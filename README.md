@@ -1,12 +1,10 @@
-# Flutter Temple Block
+# templeblock
 
-***<p style="text-align: center;">《Karma never waits》 </p>***
-百因必有果，但如果來不及了，就來敲木魚亡羊補牢
+A new Flutter project.
 
 ## Getting Started
 
 This project is a starting point for a Flutter application.
-                
 
 A few resources to get you started if this is your first Flutter project:
 

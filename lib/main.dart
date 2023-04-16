@@ -1,4 +1,3 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:templeblock/routes/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +6,7 @@ import 'themeProvider.dart';
 import 'dart:async';
 
 ThemeProvider themeProvider = ThemeProvider();
+SettingsCache settingsCache = SettingsCache();
 
 class SettingsCache{
   late bool volumeSwitch;
@@ -34,7 +34,47 @@ class SettingsCache{
 
 }
 
-SettingsCache settingsCache = SettingsCache();
+class TempleBlock {
+  Timer autoTimer = Timer.periodic(const Duration(hours: 999),(timer) {}); //這裡的函數只是個噱頭
+  late final AnimationController stickAnimationController;
+  late final AnimationController blockAnimationController;
+  TempleBlock(this.stickAnimationController, this.blockAnimationController);
+
+  void hit(){
+    if (settingsCache.volumeSwitch) AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
+    blockAnimationController.animateTo(0.45);
+    stickAnimationController.animateTo(0.25);
+  }
+
+  void release(){
+    blockAnimationController.animateTo(0.5);
+    stickAnimationController.animateTo(0.21);
+  }
+
+  void loopSound(timer){
+    if (settingsCache.volumeSwitch)
+    {AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency); }
+    blockAnimationController.animateTo(0.45).then((value) => blockAnimationController.animateTo(0.5));
+    stickAnimationController.animateTo(0.25).then((value) => stickAnimationController.animateTo(0.21));
+  }
+
+  void stopSound (){
+    if (autoTimer.isActive) autoTimer.cancel();
+  }
+
+  void switchMode (List<bool> options) {
+    switch(options[1]){
+      case true:
+        loopSound(0);
+        if (autoTimer.isActive) autoTimer.cancel();
+        autoTimer = Timer.periodic(Duration(milliseconds: settingsCache.convertBPM()), loopSound);
+        break;
+      case false:
+        autoTimer.cancel();
+    }
+  }
+
+}
 
 void main() {
   runApp(const MyApp());
@@ -46,9 +86,7 @@ Route _createRoute() {
     pageBuilder: (context, animation, secondaryAnimation) => const SettingsRoute(),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       const curve = Curves.ease;
-
       var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: curve));
-
       return SlideTransition(
         position: animation.drive(tween),
         child: child,
@@ -82,56 +120,52 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-
-  var timer;
-  void switchAuto (List<bool> options) {
-    try{
-      timer.cancel();
-    }catch(_){}
-
-    switch(options[1]){
-      case true:
-        if (settingsCache.volumeSwitch){
-          AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
-        }
-        _animationController.animateTo(0.45).then((value) => _animationController.animateTo(0.5));
-        timer = Timer.periodic(Duration(milliseconds: settingsCache.convertBPM()), (timer) {
-          if (settingsCache.volumeSwitch) {
-            AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
-          }
-          _animationController.animateTo(0.45).then((value) => _animationController.animateTo(0.5));
-          }
-        );
-        break;
-      case false:
-        timer.cancel();
-    }
-  }
-
-  late final AnimationController _animationController = AnimationController(
-    duration: const Duration(milliseconds: 500),
-    value: 0.5,
-    vsync: this,
-  );
-  late final Animation<double> _scaleAnimation = CurvedAnimation(
-    parent: _animationController,
-    curve: Curves.fastOutSlowIn,
-  );
+  late final Animation<double> blockScaleAnimation;
+  late final AnimationController blockAnimationController;
+  late final Animation<double> stickRotateAnimation;
+  late final AnimationController stickAnimationController;
+  late final TempleBlock templeBlock;
 
   List <bool> hitMode = [true, false];
-  List<Widget> fruits = <Widget>[
-    const Text('手尻'),
-    const Text('自動')
-  ];
+  List<Widget> fruits = <Widget>[ const Text('手尻'), const Text('自動') ];
 
   @override
   void initState() {
     super.initState();
-    initFunctions();
+    // Temple Block Scale Animation
+    blockAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      value: 0.5,
+      vsync: this
+    );
+    blockScaleAnimation = CurvedAnimation(
+      parent: blockAnimationController,
+      curve: Curves.fastOutSlowIn
+    );
+
+    // Stick rotatye Animation
+    stickAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      value: 0.21,
+      vsync: this
+    );
+    stickRotateAnimation = CurvedAnimation(
+      parent: stickAnimationController,
+      curve: Curves.fastOutSlowIn
+    );
+    initAsync(); // 執行非同步的初始化
+    templeBlock = TempleBlock(stickAnimationController, blockAnimationController); // 套用到木魚 Class
   }
 
-  initFunctions() async {
+  initAsync() async {
     await settingsCache.updateValue();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    blockAnimationController.dispose();
+    stickAnimationController.dispose();
   }
 
   @override
@@ -143,11 +177,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
       body: Stack(
         children: [
-          const AnimatedPositioned(
-            child: Text("asdasdsad"),
-            duration: Duration(seconds: 10)
+          SizedBox(
+            child: Container(
+              height: MediaQuery.of(context).size.height,
+              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width, maxWidth: MediaQuery.of(context).size.width),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+              child: ScaleTransition(
+                  scale: blockScaleAnimation,
+                  child: Image.asset(
+                    'assets/tampleBlocks/TampleBlock0.png',
+                    fit: BoxFit.fitWidth,
+                    scale: 0.5,
+                  )
+                ),
+            )
           ),
-          Row(
+          Container(
+            margin: const EdgeInsets.fromLTRB(30, 150, 0, 0),
+            height: 250,
+            child: RotationTransition(
+              turns: stickRotateAnimation,
+              child: Image.asset(
+                'assets/stick/hotdog-stick.png',
+                fit: BoxFit.fitWidth,
+                scale: 0.5,
+              ),
+            )
+          ),
+          InkWell(
+            onTapDown: (details) => templeBlock.hit(),
+            onTapCancel: () => templeBlock.release(),
+            onTapUp: (details) => templeBlock.release(),
+            splashColor: Colors.transparent,
+            splashFactory: NoSplash.splashFactory,
+            highlightColor: Colors.transparent,
+          ),
+          const AnimatedPositioned(
+            duration: Duration(seconds: 10),
+            child: Text("Test")
+          ),
+          Row( //最上面那條功能列
             children: [
               Container(
                 height: MediaQuery.of(context).size.height,
@@ -160,7 +229,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     onPressed: (int index) {
                       setState(() {
                         for (int i = 0; i < hitMode.length; i++) { hitMode[i] = i == index; }
-                        switchAuto(hitMode);
+                        templeBlock.switchMode(hitMode);
                       });
                     },
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
@@ -170,10 +239,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     color: Theme.of(context).primaryColor,
                     borderColor: Theme.of(context).primaryColor,
                     focusColor: Colors.redAccent.withOpacity(0),
-                    constraints: const BoxConstraints(
-                      minHeight: 30.0,
-                      minWidth: 50.0,
-                    ),
+                  constraints: const BoxConstraints(
+                    minHeight: 30.0,
+                    minWidth: 50.0,
+                  ),
                     isSelected: hitMode,
                     children: fruits,
                   ),
@@ -185,10 +254,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 margin: const EdgeInsets.fromLTRB(0, 4, 10, 0),
                 child: IconButton(
                   onPressed: () {
-                    try { timer.cancel(); } catch (_){}
+                    templeBlock.stopSound();
                     Navigator.of(context).push(_createRoute()).then((value) async {
                       await settingsCache.updateValue();
-                      switchAuto(hitMode);
+                      templeBlock.switchMode(hitMode);
                     });
                   },
                   icon: const Icon(Icons.settings),
@@ -196,27 +265,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               )
             ],
           ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: GestureDetector(
-              onTapDown: (details) async {
-                if (settingsCache.volumeSwitch) AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
-                _animationController.animateTo(0.45);
-              },
-              onTapUp: (details) {
-                _animationController.animateTo(0.5);
-              },
-
-              child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Image.asset(
-                    'assets/tampleBlocks/TampleBlock0.png',
-                    fit: BoxFit.fitWidth,
-                    scale: 0.5,
-                  )
-              ),
-            ),
-          )
         ],
       )
     );
