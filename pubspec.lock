@@ -58,7 +58,7 @@ packages:
     source: hosted
     version: "6.1.0"
   audioplayers_web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: audioplayers_web
       sha256: "22cd0173e54d92bd9b2c80b1204eb1eb159ece87475ab58c9788a70ec43c2a62"
