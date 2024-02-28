@@ -299,7 +299,7 @@ class _SettingsRouteState extends State<SettingsRoute> {
                   ),
                   Slider(
                     value: sliderController.currentValue,
-                    max: 300,
+                    max: 1000,
                     min: 1,
                     thumbColor: Theme.of(context).primaryColor,
                     inactiveColor: Colors.grey,
@@ -312,8 +312,7 @@ class _SettingsRouteState extends State<SettingsRoute> {
                     },
                     onChangeEnd: (double value) async {
                       await sliderController.saveChanges();
-
-                    },
+                    }
                   )
                 ],
               )
