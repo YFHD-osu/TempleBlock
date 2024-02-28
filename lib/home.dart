@@ -9,6 +9,8 @@ import 'package:templeblock/settings.dart';
 
 class TempleBlock {
   final TickerProvider tick;
+  final player = AudioPlayer();
+
   late final AnimationController stickController = AnimationController(
     duration: const Duration(milliseconds: 500), value: 0.21, vsync: tick
   );
@@ -22,12 +24,12 @@ class TempleBlock {
 
   Future<void> hit() async {
     if (Settings.instance.volume)  {
-      AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
+      player.play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
     }
+    Settings.instance.hitCount.value++;
     final task1 = blockController.animateTo(0.45);
     final task2 = stickController.animateTo(0.25);
     await Future.wait([task1, task2]);
-    Settings.instance.hitCount.value++;
   }
 
   void release() {
@@ -37,7 +39,7 @@ class TempleBlock {
 
   void loopSound(timer) async {
     if (Settings.instance.volume) {
-      AudioPlayer().play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
+      player.play(AssetSource('hitSounds/HitSound1.wav'), mode: PlayerMode.lowLatency);
     }
     await hit();
     release();
