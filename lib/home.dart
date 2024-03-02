@@ -11,6 +11,7 @@ class TempleBlock {
   final TickerProvider tick;
   final player = AudioPlayer();
   final source = AssetSource('hitSounds/HitSound1.wav');
+  bool isPlaying = false;
 
   late final AnimationController stickController = AnimationController(
     duration: const Duration(milliseconds: 500), value: 0.21, vsync: tick
@@ -24,8 +25,10 @@ class TempleBlock {
   Timer autoTimer = Timer.periodic(const Duration(hours: 999),(timer) {}); //這裡的函數只是個噱頭
 
   Future<void> hit() async {
-    if (Settings.instance.volume)  {
-      player.play(source, mode: PlayerMode.lowLatency);
+    if (Settings.instance.volume && !isPlaying)  {
+      isPlaying = true;
+      player.play(source, mode: PlayerMode.lowLatency)
+      .then((value) => isPlaying = false);
     }
     Settings.instance.hitCount.value++;
     final task1 = blockController.animateTo(0.45);
