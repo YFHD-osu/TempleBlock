@@ -40,7 +40,7 @@ class TempleBlock {
 
   void loopSound(timer) async {
     if (Settings.instance.volume) {
-      player.play(source, mode: PlayerMode.lowLatency);
+      player.play(source, mode: PlayerMode.mediaPlayer);
     }
     await hit();
     release();
