@@ -25,10 +25,11 @@ class TempleBlock {
   Timer autoTimer = Timer.periodic(const Duration(hours: 999),(timer) {}); //這裡的函數只是個噱頭
 
   Future<void> hit() async {
+    print(isPlaying);
     if (Settings.instance.volume && !isPlaying)  {
       isPlaying = true;
-      player.play(source, mode: PlayerMode.lowLatency)
-      .then((value) => isPlaying = false);
+      player.play(source, mode: PlayerMode.lowLatency);
+      Future.delayed(const Duration(milliseconds: 500)).then((value) => isPlaying = false);
     }
     Settings.instance.hitCount.value++;
     final task1 = blockController.animateTo(0.45);
